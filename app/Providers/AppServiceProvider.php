@@ -2,6 +2,14 @@
 
 namespace App\Providers;
 
+use App\Repositories\Contracts\CaseRepositoryInterface;
+use App\Repositories\Contracts\ComplaintTypeRepositoryInterface;
+use App\Repositories\Contracts\RegionRepositoryInterface;
+use App\Repositories\Contracts\UserAccessRepositoryInterface;
+use App\Repositories\Eloquent\EloquentCaseRepository;
+use App\Repositories\Eloquent\EloquentComplaintTypeRepository;
+use App\Repositories\Eloquent\EloquentRegionRepository;
+use App\Repositories\Eloquent\EloquentUserAccessRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +23,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(ComplaintTypeRepositoryInterface::class, EloquentComplaintTypeRepository::class);
+        $this->app->bind(CaseRepositoryInterface::class, EloquentCaseRepository::class);
+        $this->app->bind(RegionRepositoryInterface::class, EloquentRegionRepository::class);
+        $this->app->bind(UserAccessRepositoryInterface::class, EloquentUserAccessRepository::class);
     }
 
     /**

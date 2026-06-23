@@ -1,0 +1,58 @@
+<?php
+
+namespace Tests\Unit;
+
+use App\Models\Region;
+use App\Services\RegionService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class RegionServiceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_it_filters_regions_by_search_and_status(): void
+    {
+        Region::factory()->create([
+            'code' => 'NCR',
+            'name' => 'National Capital Region',
+            'is_active' => true,
+        ]);
+
+        Region::factory()->create([
+            'code' => 'R1',
+            'name' => 'Ilocos Region',
+            'is_active' => false,
+        ]);
+
+        $regions = app(RegionService::class)->paginateForIndex([
+            'search' => 'Capital',
+            'status' => 'active',
+        ]);
+
+        $this->assertSame(1, $regions->total());
+        $this->assertSame('NCR', $regions->items()[0]->code);
+    }
+
+    public function test_it_creates_and_updates_regions(): void
+    {
+        $service = app(RegionService::class);
+
+        $region = $service->create([
+            'code' => 'CAR',
+            'name' => 'Cordillera Administrative Region',
+            'description' => null,
+            'is_active' => true,
+        ]);
+
+        $updated = $service->update($region, [
+            'code' => 'CAR',
+            'name' => 'Cordillera',
+            'description' => 'Updated.',
+            'is_active' => false,
+        ]);
+
+        $this->assertSame('Cordillera', $updated->name);
+        $this->assertFalse($updated->is_active);
+    }
+}

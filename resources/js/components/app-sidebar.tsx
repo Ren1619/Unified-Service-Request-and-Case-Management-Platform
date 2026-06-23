@@ -1,5 +1,19 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import {
+    BookOpen,
+    ClipboardList,
+    Contact,
+    FolderGit2,
+    Inbox,
+    LayoutGrid,
+    Mail,
+    Phone,
+    Send,
+    ShieldCheck,
+    UserPlus,
+    Users,
+    UsersRound,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -14,13 +28,165 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import { index as callLogsIndex } from '@/routes/call-logs';
+import { index as casesIndex, create as casesCreate } from '@/routes/cases';
+import { index as contactsIndex, create as contactsCreate } from '@/routes/contacts';
+import { index as groupsIndex, create as groupsCreate } from '@/routes/groups';
+import { cluster as groupsCluster } from '@/routes/groups';
+import {
+    inbox as messagesInbox,
+    outbox as messagesOutbox,
+    send as messagesSend,
+    sent as messagesSent,
+} from '@/routes/messages';
+import { index as summaryIndex } from '@/routes/summary';
+import { index as usersIndex } from '@/routes/users';
+import type { NavItem, NavSection } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const mainNavSections: NavSection[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
+        items: [
+            {
+                title: 'Dashboard',
+                href: dashboard(),
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Summary',
+                href: summaryIndex(),
+                icon: ShieldCheck,
+            },
+        ],
+    },
+    {
+        label: 'Complaints',
+        items: [
+            {
+                title: 'Complaints',
+                href: casesIndex(),
+                icon: ClipboardList,
+                children: [
+                    {
+                        title: 'File Complaint',
+                        href: casesCreate(),
+                        icon: UserPlus,
+                    },
+                    {
+                        title: 'Complaint List',
+                        href: casesIndex(),
+                        icon: ClipboardList,
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        label: 'SMS',
+        items: [
+            {
+                title: 'Messages',
+                href: messagesInbox(),
+                icon: Mail,
+                children: [
+                    {
+                        title: 'Send Message',
+                        href: messagesSend(),
+                        icon: Send,
+                    },
+                    {
+                        title: 'Inbox',
+                        href: messagesInbox(),
+                        icon: Inbox,
+                    },
+                    {
+                        title: 'Sent Messages',
+                        href: messagesSent(),
+                        icon: Send,
+                    },
+                    {
+                        title: 'Outbox',
+                        href: messagesOutbox(),
+                        icon: Mail,
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        label: 'Call Logs',
+        items: [
+            {
+                title: 'Call Logs',
+                href: callLogsIndex(),
+                icon: Phone,
+                children: [
+                    {
+                        title: 'Call Logs',
+                        href: callLogsIndex(),
+                        icon: Phone,
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        label: 'Contacts',
+        items: [
+            {
+                title: 'Contacts',
+                href: contactsIndex(),
+                icon: Contact,
+                children: [
+                    {
+                        title: 'Add New Contact',
+                        href: contactsCreate(),
+                        icon: UserPlus,
+                    },
+                    {
+                        title: 'Contact List',
+                        href: contactsIndex(),
+                        icon: UsersRound,
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        label: 'Groups',
+        items: [
+            {
+                title: 'Groups',
+                href: groupsIndex(),
+                icon: Users,
+                children: [
+                    {
+                        title: 'Add New Group',
+                        href: groupsCreate(),
+                        icon: UserPlus,
+                    },
+                    {
+                        title: 'Groups List',
+                        href: groupsIndex(),
+                        icon: UsersRound,
+                    },
+                    {
+                        title: 'Cluster',
+                        href: groupsCluster(),
+                        icon: Users,
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        label: 'Administration',
+        items: [
+            {
+                title: 'User Management',
+                href: usersIndex(),
+                icon: UsersRound,
+            },
+        ],
     },
 ];
 
@@ -53,7 +219,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain sections={mainNavSections} />
             </SidebarContent>
 
             <SidebarFooter>

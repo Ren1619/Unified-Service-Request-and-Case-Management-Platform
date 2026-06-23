@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Enums\UserRole;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Features;
 use Tests\TestCase;
@@ -24,7 +26,7 @@ class RegistrationTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_new_users_can_register()
+    public function test_new_users_can_register_and_receive_citizen_role()
     {
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
@@ -35,5 +37,13 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+
+        $user = User::query()->where('email', 'test@example.com')->firstOrFail();
+
+        $this->assertTrue($user->hasRole(UserRole::Citizen));
+        $this->assertFalse($user->hasVerifiedEmail());
+
+        $this->get(route('dashboard'))
+            ->assertRedirect(route('verification.notice', absolute: false));
     }
 }
