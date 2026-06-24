@@ -1,7 +1,11 @@
+import type { Region } from './region';
+
 export type ContactGroupSummary = {
     id: number;
     name: string;
 };
+
+export type ContactRegionSummary = Pick<Region, 'id' | 'code' | 'name'>;
 
 export type Contact = {
     id: number;
@@ -11,6 +15,8 @@ export type Contact = {
     email: string | null;
     organization: string | null;
     position: string | null;
+    region_id: number | null;
+    region?: ContactRegionSummary | null;
     notes: string | null;
     is_active: boolean;
     created_at: string | null;

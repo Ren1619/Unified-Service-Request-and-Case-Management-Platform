@@ -88,6 +88,25 @@ class ContactGroupManagementTest extends TestCase
             ->assertSessionHasErrors('name');
     }
 
+    public function test_internal_users_can_create_group_from_index_modal(): void
+    {
+        $user = $this->userWithRole(UserRole::Supervisor);
+
+        $this->actingAs($user)
+            ->from(route('groups.index'))
+            ->post(route('groups.store'), [
+                'name' => 'Index Modal Group',
+                'description' => null,
+                'is_active' => true,
+                'redirect_to' => 'index',
+            ])
+            ->assertRedirect(route('groups.index'));
+
+        $this->assertDatabaseHas('contact_groups', [
+            'name' => 'Index Modal Group',
+        ]);
+    }
+
     public function test_internal_users_can_view_group_cluster(): void
     {
         $group = ContactGroup::factory()->create(['name' => 'Hotline Team']);

@@ -30,7 +30,7 @@ class CaseServiceTest extends TestCase
             'complaint_type_id' => $complaintType->id,
             'region_id' => $region->id,
             'priority' => CasePriority::Low->value,
-            'channel' => CaseChannel::SelfService->value,
+            'channel' => CaseChannel::Message->value,
         ], $admin);
 
         $second = app(CaseService::class)->create([
@@ -39,7 +39,7 @@ class CaseServiceTest extends TestCase
             'complaint_type_id' => $complaintType->id,
             'region_id' => $region->id,
             'priority' => CasePriority::Low->value,
-            'channel' => CaseChannel::SelfService->value,
+            'channel' => CaseChannel::Call->value,
         ], $admin);
 
         $this->assertStringEndsWith('-NCR-000001', $first->case_number);

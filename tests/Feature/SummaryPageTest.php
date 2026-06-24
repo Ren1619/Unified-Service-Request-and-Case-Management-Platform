@@ -32,6 +32,13 @@ class SummaryPageTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_citizens_cannot_export_summary(): void
+    {
+        $this->actingAs($this->userWithRole(UserRole::Citizen))
+            ->get(route('summary.export.overview'))
+            ->assertForbidden();
+    }
+
     public function test_supervisors_can_view_audit_summary(): void
     {
         $supervisor = $this->userWithRole(UserRole::Supervisor);
@@ -64,6 +71,50 @@ class SummaryPageTest extends TestCase
                 ->has('recentActivity', 1)
                 ->where('recentActivity.0.event', 'case_created')
             );
+    }
+
+    public function test_supervisors_can_export_summary_csvs(): void
+    {
+        $supervisor = $this->userWithRole(UserRole::Supervisor);
+        $case = ServiceCase::factory()->create([
+            'case_number' => 'CASE-2026-0001',
+            'title' => 'Water interruption',
+            'status' => CaseStatus::Resolved,
+            'created_by_agent' => $supervisor,
+        ]);
+
+        Contact::factory()->create();
+        ContactGroup::factory()->create();
+        CaseTimeline::factory()->create([
+            'service_case_id' => $case,
+            'event' => 'case_resolved',
+            'description' => 'Resolution notes captured.',
+            'created_by' => $supervisor,
+        ]);
+
+        $overview = $this->actingAs($supervisor)
+            ->get(route('summary.export.overview'))
+            ->assertOk()
+            ->assertDownload('summary-overview.csv');
+
+        $this->assertStringContainsString('"Total complaints",1', $overview->streamedContent());
+
+        $status = $this->actingAs($supervisor)
+            ->get(route('summary.export.status'))
+            ->assertOk()
+            ->assertDownload('summary-status-breakdown.csv');
+
+        $this->assertStringContainsString('Resolved,1', $status->streamedContent());
+
+        $activity = $this->actingAs($supervisor)
+            ->get(route('summary.export.activity'))
+            ->assertOk()
+            ->assertDownload('summary-recent-activity.csv');
+
+        $activityContent = $activity->streamedContent();
+
+        $this->assertStringContainsString('CASE-2026-0001', $activityContent);
+        $this->assertStringContainsString('case resolved', $activityContent);
     }
 
     private function userWithRole(UserRole $role): User

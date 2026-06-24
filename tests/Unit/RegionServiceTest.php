@@ -34,6 +34,19 @@ class RegionServiceTest extends TestCase
         $this->assertSame('NCR', $regions->items()[0]->code);
     }
 
+    public function test_it_orders_regions_for_display(): void
+    {
+        Region::factory()->create(['code' => 'BARMM', 'name' => 'Bangsamoro Autonomous Region in Muslim Mindanao']);
+        Region::factory()->create(['code' => 'NCR', 'name' => 'National Capital Region']);
+        Region::factory()->create(['code' => 'R1', 'name' => 'Ilocos Region']);
+        Region::factory()->create(['code' => 'CAR', 'name' => 'Cordillera Administrative Region']);
+        Region::factory()->create(['code' => 'NIR', 'name' => 'Negros Island Region']);
+
+        $regions = app(RegionService::class)->paginateForIndex([]);
+
+        $this->assertSame(['R1', 'NCR', 'CAR', 'NIR', 'BARMM'], collect($regions->items())->pluck('code')->all());
+    }
+
     public function test_it_creates_and_updates_regions(): void
     {
         $service = app(RegionService::class);

@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { Pencil } from 'lucide-react';
 import CaseStatusBadge from '@/components/case-status-badge';
 import Heading from '@/components/heading';
+import { PageHeader, PageShell } from '@/components/page-shell';
 import PriorityBadge from '@/components/priority-badge';
 import { Button } from '@/components/ui/button';
 import { edit, index, show } from '@/routes/cases';
@@ -20,22 +21,24 @@ export default function CasesView({ caseRecord, can }: CasesViewProps) {
         <>
             <Head title={caseRecord.case_number} />
 
-            <div className="space-y-6 p-4">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <PageShell>
+                <PageHeader
+                    actions={
+                        can.update && (
+                            <Button asChild>
+                                <Link href={edit(caseRecord.id)}>
+                                    <Pencil aria-hidden className="size-4" />
+                                    Edit
+                                </Link>
+                            </Button>
+                        )
+                    }
+                >
                     <Heading
                         title={caseRecord.case_number}
                         description={caseRecord.title}
                     />
-
-                    {can.update && (
-                        <Button asChild>
-                            <Link href={edit(caseRecord.id)}>
-                                <Pencil aria-hidden className="size-4" />
-                                Edit
-                            </Link>
-                        </Button>
-                    )}
-                </div>
+                </PageHeader>
 
                 <dl className="grid gap-4 rounded-lg border p-4 md:grid-cols-2 xl:grid-cols-4">
                     <div>
@@ -90,15 +93,13 @@ export default function CasesView({ caseRecord, can }: CasesViewProps) {
                         <dt className="text-sm text-muted-foreground">Due</dt>
                         <dd className="mt-1">
                             {caseRecord.due_date
-                                ? new Date(
-                                      caseRecord.due_date,
-                                  ).toLocaleString()
+                                ? new Date(caseRecord.due_date).toLocaleString()
                                 : 'No due date'}
                         </dd>
                     </div>
                     <div>
                         <dt className="text-sm text-muted-foreground">
-                            Channel
+                            Source
                         </dt>
                         <dd className="mt-1 capitalize">
                             {caseRecord.channel.replace('_', ' ')}
@@ -177,12 +178,12 @@ export default function CasesView({ caseRecord, can }: CasesViewProps) {
                         </table>
                     </div>
                 </section>
-            </div>
+            </PageShell>
         </>
     );
 }
 
-CasesView.layout = ({ props }: { props: { caseRecord: ServiceCase } }) => ({
+CasesView.layout = (props: { caseRecord: ServiceCase }) => ({
     breadcrumbs: [
         {
             title: 'Complaints',

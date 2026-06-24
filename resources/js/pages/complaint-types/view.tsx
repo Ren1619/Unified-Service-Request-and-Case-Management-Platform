@@ -62,11 +62,7 @@ export default function ComplaintTypesView({
     );
 }
 
-ComplaintTypesView.layout = ({
-    props,
-}: {
-    props: { complaintType: ComplaintType };
-}) => ({
+ComplaintTypesView.layout = (props: { complaintType: ComplaintType }) => ({
     breadcrumbs: [
         {
             title: 'Complaint types',

@@ -80,7 +80,7 @@ export default function UsersEdit({ user, roles, can }: UsersEditProps) {
     );
 }
 
-UsersEdit.layout = ({ props }: { props: { user: AccessUser } }) => ({
+UsersEdit.layout = (props: { user: AccessUser }) => ({
     breadcrumbs: [
         {
             title: 'User access',

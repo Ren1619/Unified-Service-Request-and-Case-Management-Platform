@@ -60,7 +60,7 @@ export default function UsersView({ user, can }: UsersViewProps) {
     );
 }
 
-UsersView.layout = ({ props }: { props: { user: AccessUser } }) => ({
+UsersView.layout = (props: { user: AccessUser }) => ({
     breadcrumbs: [
         {
             title: 'User access',

@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     Contact as ContactIcon,
     Eye,
+    MoreHorizontal,
     Pencil,
     Plus,
     Search,
@@ -12,7 +13,10 @@ import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
 import {
     EmptyState,
-    FilterBar,
+    MobileCardList,
+    MobileRecordCard,
+    MobileRecordDetail,
+    ResponsiveFilterBar,
     TableSurface,
 } from '@/components/module-surface';
 import NativeSelect from '@/components/native-select';
@@ -20,9 +24,21 @@ import { PageHeader, PageShell } from '@/components/page-shell';
 import Pagination from '@/components/pagination';
 import StatusBadge from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { create, destroy, edit, index, show } from '@/routes/contacts';
-import type { Contact, ContactGroupSummary, Paginated } from '@/types';
+import type {
+    Contact,
+    ContactGroupSummary,
+    ContactRegionSummary,
+    Paginated,
+} from '@/types';
 
 type ContactsIndexProps = {
     contacts: Paginated<Contact>;
@@ -30,8 +46,10 @@ type ContactsIndexProps = {
         search?: string | null;
         status?: string | null;
         group_id?: string | null;
+        region_id?: string | null;
     };
     groups: ContactGroupSummary[];
+    regions: ContactRegionSummary[];
     can: {
         create: boolean;
     };
@@ -41,18 +59,22 @@ export default function ContactsIndex({
     contacts,
     filters,
     groups,
+    regions,
     can,
 }: ContactsIndexProps) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [groupId, setGroupId] = useState(filters.group_id ?? '');
+    const [regionId, setRegionId] = useState(filters.region_id ?? '');
+    const [openContactId, setOpenContactId] = useState<number | null>(null);
+    const filterFormId = 'contacts-filters';
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         router.get(
             index().url,
-            { search, status, group_id: groupId },
+            { search, status, group_id: groupId, region_id: regionId },
             { preserveState: true, replace: true },
         );
     }
@@ -63,6 +85,53 @@ export default function ContactsIndex({
         }
 
         router.delete(destroy(contact.id).url, { preserveScroll: true });
+    }
+
+    function resetFilters() {
+        setSearch('');
+        setStatus('');
+        setGroupId('');
+        setRegionId('');
+        router.get(index().url, {}, { preserveState: true, replace: true });
+    }
+
+    function ContactActions({ contact }: { contact: Contact }) {
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Open actions for ${contact.name}`}
+                    >
+                        <MoreHorizontal aria-hidden className="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem asChild>
+                        <Link href={show(contact.id)}>
+                            <Eye aria-hidden className="size-4" />
+                            View
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href={edit(contact.id)}>
+                            <Pencil aria-hidden className="size-4" />
+                            Edit
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        variant="destructive"
+                        onSelect={() => archive(contact)}
+                    >
+                        <Trash2 aria-hidden className="size-4" />
+                        Archive
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
     }
 
     return (
@@ -88,10 +157,15 @@ export default function ContactsIndex({
                     />
                 </PageHeader>
 
-                <FilterBar>
+                <ResponsiveFilterBar
+                    formId={filterFormId}
+                    onReset={resetFilters}
+                    title="Filter contacts"
+                >
                     <form
+                        id={filterFormId}
                         onSubmit={submit}
-                        className="grid gap-3 md:grid-cols-4"
+                        className="grid gap-3 md:grid-cols-5"
                     >
                         <div className="relative md:col-span-2">
                             <Search
@@ -126,15 +200,32 @@ export default function ContactsIndex({
                                 </option>
                             ))}
                         </NativeSelect>
-                        <Button type="submit" variant="outline">
+                        <NativeSelect
+                            value={regionId}
+                            onChange={(event) =>
+                                setRegionId(event.target.value)
+                            }
+                        >
+                            <option value="">All regions</option>
+                            {regions.map((region) => (
+                                <option key={region.id} value={region.id}>
+                                    {region.code} - {region.name}
+                                </option>
+                            ))}
+                        </NativeSelect>
+                        <Button
+                            type="submit"
+                            variant="outline"
+                            className="hidden md:inline-flex"
+                        >
                             <Search aria-hidden className="size-4" />
                             Search
                         </Button>
                     </form>
-                </FilterBar>
+                </ResponsiveFilterBar>
 
-                <TableSurface>
-                    <table className="w-full min-w-[760px] text-sm">
+                <TableSurface className="hidden md:block">
+                    <table className="w-full min-w-[920px] text-sm">
                         <thead className="bg-muted/60 text-left text-xs text-muted-foreground uppercase">
                             <tr>
                                 <th className="px-4 py-3 font-medium">Name</th>
@@ -143,6 +234,9 @@ export default function ContactsIndex({
                                 </th>
                                 <th className="hidden px-4 py-3 font-medium xl:table-cell">
                                     Groups
+                                </th>
+                                <th className="hidden px-4 py-3 font-medium 2xl:table-cell">
+                                    Region
                                 </th>
                                 <th className="px-4 py-3 font-medium">
                                     Status
@@ -176,6 +270,11 @@ export default function ContactsIndex({
                                         {contact.groups
                                             ?.map((group) => group.name)
                                             .join(', ') || 'No groups'}
+                                    </td>
+                                    <td className="hidden px-4 py-3 text-muted-foreground 2xl:table-cell">
+                                        {contact.region
+                                            ? `${contact.region.code} - ${contact.region.name}`
+                                            : 'No region'}
                                     </td>
                                     <td className="px-4 py-3">
                                         <StatusBadge
@@ -233,7 +332,7 @@ export default function ContactsIndex({
                             {contacts.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="px-4 py-4"
                                     >
                                         <EmptyState
@@ -247,6 +346,50 @@ export default function ContactsIndex({
                         </tbody>
                     </table>
                 </TableSurface>
+
+                <MobileCardList>
+                    {contacts.data.map((contact) => (
+                        <MobileRecordCard
+                            key={contact.id}
+                            actions={<ContactActions contact={contact} />}
+                            badges={<StatusBadge active={contact.is_active} />}
+                            description={
+                                contact.mobile_number ??
+                                contact.email ??
+                                'No contact details'
+                            }
+                            isOpen={openContactId === contact.id}
+                            onOpenChange={(open) =>
+                                setOpenContactId(open ? contact.id : null)
+                            }
+                            title={contact.name}
+                        >
+                            <MobileRecordDetail label="Mobile">
+                                {contact.mobile_number ?? 'Not provided'}
+                            </MobileRecordDetail>
+                            <MobileRecordDetail label="Email">
+                                {contact.email ?? 'Not provided'}
+                            </MobileRecordDetail>
+                            <MobileRecordDetail label="Groups">
+                                {contact.groups
+                                    ?.map((group) => group.name)
+                                    .join(', ') || 'No groups'}
+                            </MobileRecordDetail>
+                            <MobileRecordDetail label="Region">
+                                {contact.region
+                                    ? `${contact.region.code} - ${contact.region.name}`
+                                    : 'No region'}
+                            </MobileRecordDetail>
+                        </MobileRecordCard>
+                    ))}
+                    {contacts.data.length === 0 && (
+                        <EmptyState
+                            icon={ContactIcon}
+                            title="No contacts found"
+                            description="Add contacts for citizens, offices, partner organizations, and SMS groups."
+                        />
+                    )}
+                </MobileCardList>
 
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <p className="text-sm text-muted-foreground">

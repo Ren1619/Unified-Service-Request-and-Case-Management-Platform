@@ -28,7 +28,7 @@ class ServiceCaseFactory extends Factory
             'title' => fake()->sentence(4),
             'description' => fake()->paragraph(),
             'complaint_type_id' => ComplaintType::factory(),
-            'channel' => CaseChannel::SelfService,
+            'channel' => CaseChannel::Message,
             'priority' => CasePriority::Medium,
             'status' => CaseStatus::New,
             'region_id' => Region::factory(),

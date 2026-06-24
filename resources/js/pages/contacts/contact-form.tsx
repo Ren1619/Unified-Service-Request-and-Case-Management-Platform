@@ -4,14 +4,23 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Contact, ContactGroupSummary } from '@/types';
+import type {
+    Contact,
+    ContactGroupSummary,
+    ContactRegionSummary,
+} from '@/types';
 
 type ContactFormProps = {
     contact?: Contact;
     groups: ContactGroupSummary[];
+    regions: ContactRegionSummary[];
 };
 
-export default function ContactForm({ contact, groups }: ContactFormProps) {
+export default function ContactForm({
+    contact,
+    groups,
+    regions,
+}: ContactFormProps) {
     const action = contact
         ? ContactController.update.form(contact.id)
         : ContactController.store.form();
@@ -20,10 +29,13 @@ export default function ContactForm({ contact, groups }: ContactFormProps) {
     );
 
     return (
-        <Form {...action} className="mx-auto w-full max-w-5xl space-y-6">
+        <Form
+            {...action}
+            className="mx-auto w-full max-w-5xl space-y-4 sm:space-y-6"
+        >
             {({ errors, processing }) => (
                 <>
-                    <div className="grid gap-6 md:grid-cols-2">
+                    <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="name">Name</Label>
                             <Input
@@ -47,7 +59,7 @@ export default function ContactForm({ contact, groups }: ContactFormProps) {
                         </div>
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-2">
+                    <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="mobile_number">Mobile number</Label>
                             <Input
@@ -69,7 +81,7 @@ export default function ContactForm({ contact, groups }: ContactFormProps) {
                         </div>
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-2">
+                    <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="organization">Organization</Label>
                             <Input
@@ -92,13 +104,31 @@ export default function ContactForm({ contact, groups }: ContactFormProps) {
                     </div>
 
                     <div className="grid gap-2">
+                        <Label htmlFor="region_id">Region</Label>
+                        <select
+                            id="region_id"
+                            name="region_id"
+                            defaultValue={contact?.region_id ?? ''}
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-80"
+                        >
+                            <option value="">No region assigned</option>
+                            {regions.map((region) => (
+                                <option key={region.id} value={region.id}>
+                                    {region.code} - {region.name}
+                                </option>
+                            ))}
+                        </select>
+                        <InputError message={errors.region_id} />
+                    </div>
+
+                    <div className="grid gap-2">
                         <Label htmlFor="notes">Notes</Label>
                         <textarea
                             id="notes"
                             name="notes"
                             defaultValue={contact?.notes ?? ''}
                             rows={4}
-                            className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            className="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-28"
                         />
                         <InputError message={errors.notes} />
                     </div>
@@ -119,7 +149,7 @@ export default function ContactForm({ contact, groups }: ContactFormProps) {
                         <InputError message={errors.is_active} />
                     </div>
 
-                    <fieldset className="space-y-3 rounded-lg border p-4">
+                    <fieldset className="space-y-3 rounded-lg border p-3 sm:p-4">
                         <legend className="px-1 text-sm font-medium">
                             Groups
                         </legend>
@@ -127,7 +157,7 @@ export default function ContactForm({ contact, groups }: ContactFormProps) {
                             {groups.map((group) => (
                                 <label
                                     key={group.id}
-                                    className="flex items-center gap-2 text-sm"
+                                    className="flex min-w-0 items-center gap-2 text-sm"
                                 >
                                     <input
                                         type="checkbox"
@@ -138,7 +168,9 @@ export default function ContactForm({ contact, groups }: ContactFormProps) {
                                         )}
                                         className="size-4 rounded border-input"
                                     />
-                                    <span>{group.name}</span>
+                                    <span className="min-w-0 break-words">
+                                        {group.name}
+                                    </span>
                                 </label>
                             ))}
                             {groups.length === 0 && (
@@ -150,7 +182,7 @@ export default function ContactForm({ contact, groups }: ContactFormProps) {
                         <InputError message={errors.group_ids} />
                     </fieldset>
 
-                    <Button disabled={processing}>
+                    <Button disabled={processing} className="w-full sm:w-auto">
                         {contact ? 'Save changes' : 'Create contact'}
                     </Button>
                 </>

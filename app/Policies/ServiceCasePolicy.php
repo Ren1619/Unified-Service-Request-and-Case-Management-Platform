@@ -28,7 +28,7 @@ class ServiceCasePolicy
 
     public function create(User $user): bool
     {
-        return $this->viewAny($user);
+        return $this->isInternalUser($user);
     }
 
     public function update(User $user, ServiceCase $case): bool

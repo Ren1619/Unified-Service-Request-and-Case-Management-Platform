@@ -27,7 +27,7 @@ export default function GroupsEdit({
     );
 }
 
-GroupsEdit.layout = ({ props }: { props: { group: ContactGroup } }) => ({
+GroupsEdit.layout = (props: { group: ContactGroup }) => ({
     breadcrumbs: [
         { title: 'Groups', href: index() },
         { title: props.group.name, href: show(props.group.id) },

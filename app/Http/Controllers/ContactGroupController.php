@@ -41,6 +41,9 @@ class ContactGroupController extends Controller
             'can' => [
                 'create' => $request->user()?->can('create', ContactGroup::class) ?? false,
             ],
+            'contacts' => $request->user()?->can('create', ContactGroup::class)
+                ? $this->contactsForSelect()
+                : [],
         ]);
     }
 
@@ -72,6 +75,10 @@ class ContactGroupController extends Controller
         $group->contacts()->sync($request->contactIds());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Group created.')]);
+
+        if ($request->string('redirect_to')->toString() === 'index') {
+            return to_route('groups.index');
+        }
 
         return to_route('groups.show', $group);
     }

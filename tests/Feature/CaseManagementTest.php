@@ -12,6 +12,7 @@ use App\Models\Role;
 use App\Models\ServiceCase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class CaseManagementTest extends TestCase
@@ -31,7 +32,7 @@ class CaseManagementTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
-    public function test_citizens_can_create_self_service_cases(): void
+    public function test_citizens_cannot_create_cases(): void
     {
         $citizen = $this->userWithRole(UserRole::Citizen);
         $complaintType = ComplaintType::factory()->create();
@@ -44,21 +45,11 @@ class CaseManagementTest extends TestCase
                 'complaint_type_id' => $complaintType->id,
                 'region_id' => $region->id,
                 'priority' => CasePriority::High->value,
-                'channel' => CaseChannel::AgentAssisted->value,
+                'channel' => CaseChannel::Message->value,
             ])
-            ->assertRedirect();
+            ->assertForbidden();
 
-        $case = ServiceCase::query()->firstOrFail();
-
-        $this->assertModelExists($case);
-        $this->assertSame('new', $case->status->value);
-        $this->assertSame('self_service', $case->channel->value);
-        $this->assertSame($citizen->id, $case->submitted_by);
-        $this->assertStringContainsString('-NCR-000001', $case->case_number);
-        $this->assertDatabaseHas('case_timelines', [
-            'service_case_id' => $case->id,
-            'event' => 'case_created',
-        ]);
+        $this->assertDatabaseCount('cases', 0);
     }
 
     public function test_agents_can_create_assigned_cases(): void
@@ -75,7 +66,7 @@ class CaseManagementTest extends TestCase
                 'complaint_type_id' => $complaintType->id,
                 'region_id' => $region->id,
                 'priority' => CasePriority::Medium->value,
-                'channel' => CaseChannel::AgentAssisted->value,
+                'channel' => CaseChannel::Call->value,
                 'assigned_to' => $officer->id,
             ])
             ->assertRedirect();
@@ -83,8 +74,27 @@ class CaseManagementTest extends TestCase
         $case = ServiceCase::query()->firstOrFail();
 
         $this->assertSame(CaseStatus::Assigned, $case->status);
+        $this->assertSame(CaseChannel::Call, $case->channel);
         $this->assertSame($officer->id, $case->assigned_to);
         $this->assertSame($agent->id, $case->created_by_agent);
+        $this->assertNull($case->submitted_by);
+    }
+
+    public function test_case_forms_list_regions_in_display_order(): void
+    {
+        Region::factory()->create(['code' => 'R5', 'name' => 'Bicol Region']);
+        Region::factory()->create(['code' => 'R1', 'name' => 'Ilocos Region']);
+        Region::factory()->create(['code' => 'NCR', 'name' => 'National Capital Region']);
+
+        $this->actingAs($this->userWithRole(UserRole::CustomerServiceAgent))
+            ->get(route('cases.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('cases/create')
+                ->where('options.regions.0.code', 'R1')
+                ->where('options.regions.1.code', 'R5')
+                ->where('options.regions.2.code', 'NCR')
+            );
     }
 
     public function test_internal_users_can_update_valid_case_statuses(): void
@@ -114,6 +124,64 @@ class CaseManagementTest extends TestCase
             'service_case_id' => $case->id,
             'event' => 'status_updated',
         ]);
+    }
+
+    public function test_internal_users_can_quick_update_case_statuses(): void
+    {
+        $officer = $this->userWithRole(UserRole::CaseOfficer);
+        $case = ServiceCase::factory()->create([
+            'status' => CaseStatus::Assigned,
+            'assigned_to' => $officer->id,
+        ]);
+
+        $this->actingAs($officer)
+            ->from(route('cases.index'))
+            ->patch(route('cases.status', $case), [
+                'status' => CaseStatus::InProgress->value,
+            ])
+            ->assertRedirect(route('cases.index'));
+
+        $this->assertSame(CaseStatus::InProgress, $case->refresh()->status);
+        $this->assertDatabaseHas('case_timelines', [
+            'service_case_id' => $case->id,
+            'event' => 'status_updated',
+        ]);
+    }
+
+    public function test_quick_status_update_rejects_invalid_transitions(): void
+    {
+        $officer = $this->userWithRole(UserRole::CaseOfficer);
+        $case = ServiceCase::factory()->create([
+            'status' => CaseStatus::New,
+            'assigned_to' => $officer->id,
+        ]);
+
+        $this->actingAs($officer)
+            ->from(route('cases.index'))
+            ->patch(route('cases.status', $case), [
+                'status' => CaseStatus::Closed->value,
+            ])
+            ->assertRedirect(route('cases.index'))
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame(CaseStatus::New, $case->refresh()->status);
+    }
+
+    public function test_citizens_cannot_quick_update_case_statuses(): void
+    {
+        $citizen = $this->userWithRole(UserRole::Citizen);
+        $case = ServiceCase::factory()->create([
+            'submitted_by' => $citizen->id,
+            'status' => CaseStatus::Assigned,
+        ]);
+
+        $this->actingAs($citizen)
+            ->patch(route('cases.status', $case), [
+                'status' => CaseStatus::InProgress->value,
+            ])
+            ->assertForbidden();
+
+        $this->assertSame(CaseStatus::Assigned, $case->refresh()->status);
     }
 
     public function test_invalid_status_transitions_are_rejected(): void

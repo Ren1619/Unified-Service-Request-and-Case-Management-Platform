@@ -26,7 +26,7 @@ class StoreCaseRequest extends FormRequest
             'complaint_type_id' => ['required', 'integer', Rule::exists('complaint_types', 'id')->where('is_active', true)],
             'region_id' => ['required', 'integer', Rule::exists('regions', 'id')->where('is_active', true)],
             'priority' => ['required', Rule::enum(CasePriority::class)],
-            'channel' => ['required', Rule::enum(CaseChannel::class)],
+            'channel' => ['required', Rule::enum(CaseChannel::class)->only(CaseChannel::intakeSources())],
             'submitted_by' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'assigned_to' => ['nullable', 'integer', Rule::exists('users', 'id')],
         ];

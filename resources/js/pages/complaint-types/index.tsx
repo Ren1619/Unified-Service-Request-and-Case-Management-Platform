@@ -1,11 +1,22 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, ListChecks, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import {
+    Eye,
+    ListChecks,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
 import {
     EmptyState,
-    FilterBar,
+    MobileCardList,
+    MobileRecordCard,
+    MobileRecordDetail,
+    ResponsiveFilterBar,
     TableSurface,
 } from '@/components/module-surface';
 import NativeSelect from '@/components/native-select';
@@ -13,6 +24,13 @@ import { PageHeader, PageShell } from '@/components/page-shell';
 import Pagination from '@/components/pagination';
 import StatusBadge from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { create, destroy, edit, index, show } from '@/routes/complaint-types';
 import type { ComplaintType, Paginated } from '@/types';
@@ -35,6 +53,10 @@ export default function ComplaintTypesIndex({
 }: ComplaintTypesIndexProps) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
+    const [openComplaintTypeId, setOpenComplaintTypeId] = useState<
+        number | null
+    >(null);
+    const filterFormId = 'complaint-types-filters';
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -52,6 +74,59 @@ export default function ComplaintTypesIndex({
         }
 
         router.delete(destroy(complaintType.id).url, { preserveScroll: true });
+    }
+
+    function resetFilters() {
+        setSearch('');
+        setStatus('');
+        router.get(index().url, {}, { preserveState: true, replace: true });
+    }
+
+    function ComplaintTypeActions({
+        complaintType,
+    }: {
+        complaintType: ComplaintType;
+    }) {
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Open actions for ${complaintType.name}`}
+                    >
+                        <MoreHorizontal aria-hidden className="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem asChild>
+                        <Link href={show(complaintType.id)}>
+                            <Eye aria-hidden className="size-4" />
+                            View
+                        </Link>
+                    </DropdownMenuItem>
+                    {can.create && (
+                        <>
+                            <DropdownMenuItem asChild>
+                                <Link href={edit(complaintType.id)}>
+                                    <Pencil aria-hidden className="size-4" />
+                                    Edit
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => archive(complaintType)}
+                            >
+                                <Trash2 aria-hidden className="size-4" />
+                                Archive
+                            </DropdownMenuItem>
+                        </>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
     }
 
     return (
@@ -77,8 +152,13 @@ export default function ComplaintTypesIndex({
                     />
                 </PageHeader>
 
-                <FilterBar>
+                <ResponsiveFilterBar
+                    formId={filterFormId}
+                    onReset={resetFilters}
+                    title="Filter complaint types"
+                >
                     <form
+                        id={filterFormId}
                         onSubmit={submit}
                         className="flex flex-col gap-3 md:flex-row md:items-center"
                     >
@@ -107,14 +187,18 @@ export default function ComplaintTypesIndex({
                             <option value="inactive">Inactive</option>
                         </NativeSelect>
 
-                        <Button type="submit" variant="outline">
+                        <Button
+                            type="submit"
+                            variant="outline"
+                            className="hidden md:inline-flex"
+                        >
                             <Search aria-hidden className="size-4" />
                             Search
                         </Button>
                     </form>
-                </FilterBar>
+                </ResponsiveFilterBar>
 
-                <TableSurface>
+                <TableSurface className="hidden md:block">
                     <table className="w-full min-w-[680px] text-sm">
                         <thead className="bg-muted/60 text-left text-xs text-muted-foreground uppercase">
                             <tr>
@@ -224,6 +308,48 @@ export default function ComplaintTypesIndex({
                         </tbody>
                     </table>
                 </TableSurface>
+
+                <MobileCardList>
+                    {complaintTypes.data.map((complaintType) => (
+                        <MobileRecordCard
+                            key={complaintType.id}
+                            actions={
+                                <ComplaintTypeActions
+                                    complaintType={complaintType}
+                                />
+                            }
+                            badges={
+                                <StatusBadge active={complaintType.is_active} />
+                            }
+                            description={
+                                complaintType.description ?? 'No description'
+                            }
+                            isOpen={openComplaintTypeId === complaintType.id}
+                            onOpenChange={(open) =>
+                                setOpenComplaintTypeId(
+                                    open ? complaintType.id : null,
+                                )
+                            }
+                            title={complaintType.name}
+                        >
+                            <MobileRecordDetail label="Description">
+                                {complaintType.description ?? 'No description'}
+                            </MobileRecordDetail>
+                            <MobileRecordDetail label="Status">
+                                <StatusBadge
+                                    active={complaintType.is_active}
+                                />
+                            </MobileRecordDetail>
+                        </MobileRecordCard>
+                    ))}
+                    {complaintTypes.data.length === 0 && (
+                        <EmptyState
+                            icon={ListChecks}
+                            title="No complaint types found"
+                            description="Create complaint categories so operators can classify incoming reports consistently."
+                        />
+                    )}
+                </MobileCardList>
 
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <p className="text-sm text-muted-foreground">

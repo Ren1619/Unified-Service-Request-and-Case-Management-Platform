@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\Contact;
 use App\Models\ContactGroup;
+use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ContactManagementTest extends TestCase
@@ -36,18 +38,47 @@ class ContactManagementTest extends TestCase
 
     public function test_internal_users_can_view_contacts(): void
     {
-        Contact::factory()->create(['name' => 'Juan Dela Cruz']);
+        $region = Region::factory()->create(['code' => 'NCR', 'name' => 'National Capital Region']);
+        Contact::factory()->create([
+            'name' => 'Juan Dela Cruz',
+            'region_id' => $region->id,
+        ]);
 
         $this->actingAs($this->userWithRole(UserRole::CustomerServiceAgent))
             ->get(route('contacts.index'))
             ->assertOk()
-            ->assertSee('contacts\\/index', false);
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('contacts/index')
+                ->where('contacts.data.0.region.code', 'NCR')
+                ->has('regions', 1)
+            );
+    }
+
+    public function test_contact_forms_list_regions_in_display_order(): void
+    {
+        Region::factory()->create(['code' => 'NCR', 'name' => 'National Capital Region']);
+        Region::factory()->create(['code' => 'R2', 'name' => 'Cagayan Valley']);
+        Region::factory()->create(['code' => 'R1', 'name' => 'Ilocos Region']);
+        Region::factory()->create(['code' => 'CAR', 'name' => 'Cordillera Administrative Region']);
+
+        $this->actingAs($this->userWithRole(UserRole::CustomerServiceAgent))
+            ->get(route('contacts.create'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('contacts/create')
+                ->where('regions.0.code', 'R1')
+                ->where('regions.1.code', 'R2')
+                ->where('regions.2.code', 'NCR')
+                ->where('regions.3.code', 'CAR')
+            );
     }
 
     public function test_internal_users_can_create_update_and_archive_contacts(): void
     {
         $user = $this->userWithRole(UserRole::CustomerServiceAgent);
         $group = ContactGroup::factory()->create(['name' => 'Operators']);
+        $region = Region::factory()->create(['code' => 'NCR']);
+        $updatedRegion = Region::factory()->create(['code' => 'CAR']);
 
         $this->actingAs($user)
             ->post(route('contacts.store'), [
@@ -57,6 +88,7 @@ class ContactManagementTest extends TestCase
                 'email' => 'maria@example.com',
                 'organization' => 'Regional Office',
                 'position' => 'Coordinator',
+                'region_id' => $region->id,
                 'notes' => 'Primary SMS contact.',
                 'is_active' => true,
                 'group_ids' => [$group->id],
@@ -66,6 +98,7 @@ class ContactManagementTest extends TestCase
         $contact = Contact::query()->where('email', 'maria@example.com')->firstOrFail();
 
         $this->assertModelExists($contact);
+        $this->assertSame($region->id, $contact->region_id);
         $this->assertTrue($contact->groups()->whereKey($group->id)->exists());
 
         $this->actingAs($user)
@@ -76,6 +109,7 @@ class ContactManagementTest extends TestCase
                 'email' => 'maria.updated@example.com',
                 'organization' => 'Central Office',
                 'position' => 'Lead Coordinator',
+                'region_id' => $updatedRegion->id,
                 'notes' => 'Updated.',
                 'is_active' => false,
                 'group_ids' => [],
@@ -84,6 +118,7 @@ class ContactManagementTest extends TestCase
 
         $this->assertFalse($contact->refresh()->is_active);
         $this->assertSame('Maria Santos Updated', $contact->name);
+        $this->assertSame($updatedRegion->id, $contact->region_id);
         $this->assertFalse($contact->groups()->whereKey($group->id)->exists());
 
         $this->actingAs($user)

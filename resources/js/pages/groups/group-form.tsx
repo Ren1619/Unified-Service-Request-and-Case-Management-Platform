@@ -9,9 +9,14 @@ import type { Contact, ContactGroup } from '@/types';
 type GroupFormProps = {
     group?: ContactGroup;
     contacts: Contact[];
+    redirectTo?: 'index';
 };
 
-export default function GroupForm({ group, contacts }: GroupFormProps) {
+export default function GroupForm({
+    group,
+    contacts,
+    redirectTo,
+}: GroupFormProps) {
     const action = group
         ? ContactGroupController.update.form(group.id)
         : ContactGroupController.store.form();
@@ -20,9 +25,20 @@ export default function GroupForm({ group, contacts }: GroupFormProps) {
     );
 
     return (
-        <Form {...action} className="mx-auto w-full max-w-4xl space-y-6">
+        <Form
+            {...action}
+            className="mx-auto w-full max-w-4xl space-y-4 sm:space-y-6"
+        >
             {({ errors, processing }) => (
                 <>
+                    {redirectTo && (
+                        <input
+                            type="hidden"
+                            name="redirect_to"
+                            value={redirectTo}
+                        />
+                    )}
+
                     <div className="grid gap-2">
                         <Label htmlFor="name">Name</Label>
                         <Input
@@ -41,7 +57,7 @@ export default function GroupForm({ group, contacts }: GroupFormProps) {
                             name="description"
                             defaultValue={group?.description ?? ''}
                             rows={4}
-                            className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            className="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-28"
                         />
                         <InputError message={errors.description} />
                     </div>
@@ -51,7 +67,9 @@ export default function GroupForm({ group, contacts }: GroupFormProps) {
                         <select
                             id="is_active"
                             name="is_active"
-                            defaultValue={group?.is_active === false ? '0' : '1'}
+                            defaultValue={
+                                group?.is_active === false ? '0' : '1'
+                            }
                             className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:w-64"
                         >
                             <option value="1">Active</option>
@@ -60,7 +78,7 @@ export default function GroupForm({ group, contacts }: GroupFormProps) {
                         <InputError message={errors.is_active} />
                     </div>
 
-                    <fieldset className="space-y-3 rounded-lg border p-4">
+                    <fieldset className="space-y-3 rounded-lg border p-3 sm:p-4">
                         <legend className="px-1 text-sm font-medium">
                             Contacts
                         </legend>
@@ -91,7 +109,7 @@ export default function GroupForm({ group, contacts }: GroupFormProps) {
                         <InputError message={errors.contact_ids} />
                     </fieldset>
 
-                    <Button disabled={processing}>
+                    <Button disabled={processing} className="w-full sm:w-auto">
                         {group ? 'Save changes' : 'Create group'}
                     </Button>
                 </>

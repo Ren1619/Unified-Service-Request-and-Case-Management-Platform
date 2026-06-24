@@ -1,11 +1,14 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Pencil, Search, Users } from 'lucide-react';
+import { Eye, MoreHorizontal, Pencil, Search, Users } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
 import {
     EmptyState,
-    FilterBar,
+    MobileCardList,
+    MobileRecordCard,
+    MobileRecordDetail,
+    ResponsiveFilterBar,
     TableSurface,
 } from '@/components/module-surface';
 import NativeSelect from '@/components/native-select';
@@ -13,6 +16,12 @@ import { PageHeader, PageShell } from '@/components/page-shell';
 import Pagination from '@/components/pagination';
 import RoleBadges from '@/components/role-badges';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { edit, index, show } from '@/routes/users';
 import type { AccessUser, Paginated, Role } from '@/types';
@@ -29,6 +38,8 @@ type UsersIndexProps = {
 export default function UsersIndex({ users, roles, filters }: UsersIndexProps) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [role, setRole] = useState(filters.role ?? '');
+    const [openUserId, setOpenUserId] = useState<number | null>(null);
+    const filterFormId = 'users-filters';
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -37,6 +48,43 @@ export default function UsersIndex({ users, roles, filters }: UsersIndexProps) {
             index().url,
             { search, role },
             { preserveState: true, replace: true },
+        );
+    }
+
+    function resetFilters() {
+        setSearch('');
+        setRole('');
+        router.get(index().url, {}, { preserveState: true, replace: true });
+    }
+
+    function UserActions({ user }: { user: AccessUser }) {
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Open actions for ${user.name}`}
+                    >
+                        <MoreHorizontal aria-hidden className="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem asChild>
+                        <Link href={show(user.id)}>
+                            <Eye aria-hidden className="size-4" />
+                            View
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href={edit(user.id)}>
+                            <Pencil aria-hidden className="size-4" />
+                            Edit
+                        </Link>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         );
     }
 
@@ -52,8 +100,13 @@ export default function UsersIndex({ users, roles, filters }: UsersIndexProps) {
                 />
                 </PageHeader>
 
-                <FilterBar>
+                <ResponsiveFilterBar
+                    formId={filterFormId}
+                    onReset={resetFilters}
+                    title="Filter users"
+                >
                     <form
+                        id={filterFormId}
                         onSubmit={submit}
                         className="flex flex-col gap-3 md:flex-row md:items-center"
                     >
@@ -85,14 +138,18 @@ export default function UsersIndex({ users, roles, filters }: UsersIndexProps) {
                             ))}
                         </NativeSelect>
 
-                        <Button type="submit" variant="outline">
+                        <Button
+                            type="submit"
+                            variant="outline"
+                            className="hidden md:inline-flex"
+                        >
                             <Search aria-hidden className="size-4" />
                             Search
                         </Button>
                     </form>
-                </FilterBar>
+                </ResponsiveFilterBar>
 
-                <TableSurface>
+                <TableSurface className="hidden md:block">
                     <table className="w-full min-w-[720px] text-sm">
                         <thead className="bg-muted/60 text-left text-xs text-muted-foreground uppercase">
                             <tr>
@@ -179,6 +236,36 @@ export default function UsersIndex({ users, roles, filters }: UsersIndexProps) {
                         </tbody>
                     </table>
                 </TableSurface>
+
+                <MobileCardList>
+                    {users.data.map((user) => (
+                        <MobileRecordCard
+                            key={user.id}
+                            actions={<UserActions user={user} />}
+                            badges={<RoleBadges roles={user.roles} />}
+                            description={user.email}
+                            isOpen={openUserId === user.id}
+                            onOpenChange={(open) =>
+                                setOpenUserId(open ? user.id : null)
+                            }
+                            title={user.name}
+                        >
+                            <MobileRecordDetail label="Email">
+                                {user.email}
+                            </MobileRecordDetail>
+                            <MobileRecordDetail label="Roles">
+                                <RoleBadges roles={user.roles} />
+                            </MobileRecordDetail>
+                        </MobileRecordCard>
+                    ))}
+                    {users.data.length === 0 && (
+                        <EmptyState
+                            icon={Users}
+                            title="No users found"
+                            description="Try another search term or role filter to review system accounts."
+                        />
+                    )}
+                </MobileCardList>
 
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <p className="text-sm text-muted-foreground">

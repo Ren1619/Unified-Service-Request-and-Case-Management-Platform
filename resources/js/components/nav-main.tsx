@@ -14,6 +14,7 @@ import {
     SidebarMenuSub,
     SidebarMenuSubButton,
     SidebarMenuSubItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem, NavSection } from '@/types';
@@ -25,6 +26,7 @@ type NavMainProps = {
 
 export function NavMain({ items = [], sections }: NavMainProps) {
     const { isCurrentUrl } = useCurrentUrl();
+    const { isMobile, setOpenMobile } = useSidebar();
     const navigationSections = sections ?? [{ label: 'Platform', items }];
 
     function isItemActive(item: NavItem): boolean {
@@ -32,6 +34,12 @@ export function NavMain({ items = [], sections }: NavMainProps) {
             isCurrentUrl(item.href) ||
             (item.children?.some((child) => isCurrentUrl(child.href)) ?? false)
         );
+    }
+
+    function closeMobileNavigation() {
+        if (isMobile) {
+            setOpenMobile(false);
+        }
     }
 
     return (
@@ -76,6 +84,9 @@ export function NavMain({ items = [], sections }: NavMainProps) {
                                                         >
                                                             <Link
                                                                 href={child.href}
+                                                                onClick={
+                                                                    closeMobileNavigation
+                                                                }
                                                                 prefetch
                                                             >
                                                                 {child.icon && (
@@ -97,7 +108,11 @@ export function NavMain({ items = [], sections }: NavMainProps) {
                                         isActive={isCurrentUrl(item.href)}
                                         tooltip={{ children: item.title }}
                                     >
-                                        <Link href={item.href} prefetch>
+                                        <Link
+                                            href={item.href}
+                                            onClick={closeMobileNavigation}
+                                            prefetch
+                                        >
                                             {item.icon && <item.icon />}
                                             <span>{item.title}</span>
                                         </Link>

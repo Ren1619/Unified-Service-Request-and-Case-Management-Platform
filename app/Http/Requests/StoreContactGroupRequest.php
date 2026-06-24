@@ -24,6 +24,7 @@ class StoreContactGroupRequest extends FormRequest
             'is_active' => ['sometimes', 'boolean'],
             'contact_ids' => ['nullable', 'array'],
             'contact_ids.*' => ['integer', Rule::exists('contacts', 'id')->where('is_active', true)],
+            'redirect_to' => ['nullable', 'string', Rule::in(['index'])],
         ];
     }
 
@@ -34,6 +35,7 @@ class StoreContactGroupRequest extends FormRequest
     {
         $validated = $this->validated();
         unset($validated['contact_ids']);
+        unset($validated['redirect_to']);
 
         return [
             ...$validated,

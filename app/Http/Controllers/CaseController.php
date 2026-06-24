@@ -8,6 +8,7 @@ use App\Enums\CaseStatus;
 use App\Enums\UserRole;
 use App\Http\Requests\StoreCaseRequest;
 use App\Http\Requests\UpdateCaseRequest;
+use App\Http\Requests\UpdateCaseStatusRequest;
 use App\Models\ComplaintType;
 use App\Models\Region;
 use App\Models\ServiceCase;
@@ -44,6 +45,8 @@ class CaseController extends Controller
             'options' => $this->formOptions(),
             'can' => [
                 'create' => $user->can('create', ServiceCase::class),
+                'update' => $user->can('update', ServiceCase::make()),
+                'delete' => $user->can('delete', ServiceCase::make()),
             ],
         ]);
     }
@@ -120,6 +123,18 @@ class CaseController extends Controller
         return to_route('cases.show', $case);
     }
 
+    public function updateStatus(UpdateCaseStatusRequest $request, ServiceCase $case): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->cases->updateStatus($case, $request->status(), $user);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Case status updated.')]);
+
+        return back();
+    }
+
     public function destroy(ServiceCase $case): RedirectResponse
     {
         Gate::authorize('delete', $case);
@@ -148,7 +163,7 @@ class CaseController extends Controller
                 ->all(),
             'channels' => array_map(
                 fn (CaseChannel $channel): array => ['value' => $channel->value, 'label' => $channel->label()],
-                CaseChannel::cases(),
+                CaseChannel::intakeSources(),
             ),
             'complaintTypes' => ComplaintType::query()
                 ->where('is_active', true)
@@ -161,7 +176,7 @@ class CaseController extends Controller
             ),
             'regions' => Region::query()
                 ->where('is_active', true)
-                ->orderBy('name')
+                ->orderedForDisplay()
                 ->get(['id', 'code', 'name'])
                 ->all(),
             'statuses' => array_map(

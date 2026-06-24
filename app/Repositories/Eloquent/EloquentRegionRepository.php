@@ -20,7 +20,7 @@ class EloquentRegionRepository implements RegionRepositoryInterface
             })
             ->when(($filters['status'] ?? null) === 'active', fn ($query) => $query->where('is_active', true))
             ->when(($filters['status'] ?? null) === 'inactive', fn ($query) => $query->where('is_active', false))
-            ->orderBy('name')
+            ->orderedForDisplay()
             ->paginate(10)
             ->withQueryString();
     }

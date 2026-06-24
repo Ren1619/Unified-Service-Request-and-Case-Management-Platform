@@ -1,5 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
-import { Activity, ClipboardList, Contact, Users } from 'lucide-react';
+import {
+    Activity,
+    ClipboardList,
+    Contact,
+    Download,
+    Users,
+} from 'lucide-react';
 import CaseStatusBadge from '@/components/case-status-badge';
 import Heading from '@/components/heading';
 import {
@@ -9,8 +15,14 @@ import {
 } from '@/components/module-surface';
 import { PageHeader, PageShell } from '@/components/page-shell';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { index as casesIndex, show as casesShow } from '@/routes/cases';
 import { index } from '@/routes/summary';
+import {
+    activity as exportActivity,
+    overview as exportOverview,
+    status as exportStatus,
+} from '@/routes/summary/export';
 
 type SummaryMetric = {
     label: string;
@@ -86,17 +98,45 @@ export default function SummaryIndex({
             icon: Users,
         },
     ];
+    const exports = [
+        {
+            label: 'Overview',
+            href: exportOverview.url(),
+        },
+        {
+            label: 'Status',
+            href: exportStatus.url(),
+        },
+        {
+            label: 'Activity',
+            href: exportActivity.url(),
+        },
+    ];
 
     return (
         <>
             <Head title="Summary" />
 
             <PageShell>
-                <PageHeader>
-                <Heading
-                    title="Summary"
-                    description="Review complaint workload, communication support data, and recent case activity for auditing."
-                />
+                <PageHeader
+                    actions={exports.map((item) => (
+                        <Button
+                            key={item.label}
+                            asChild
+                            variant="outline"
+                            size="sm"
+                        >
+                            <a href={item.href} download>
+                                <Download aria-hidden className="size-4" />
+                                {item.label}
+                            </a>
+                        </Button>
+                    ))}
+                >
+                    <Heading
+                        title="Summary"
+                        description="Review complaint workload, communication support data, and recent case activity for auditing."
+                    />
                 </PageHeader>
 
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">

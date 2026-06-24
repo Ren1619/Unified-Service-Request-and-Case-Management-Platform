@@ -7,6 +7,7 @@ import {
     Inbox,
     LayoutGrid,
     Mail,
+    MapPinned,
     Phone,
     Send,
     ShieldCheck,
@@ -26,12 +27,13 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { index as callLogsIndex } from '@/routes/call-logs';
-import { index as casesIndex, create as casesCreate } from '@/routes/cases';
+import { index as casesIndex } from '@/routes/cases';
 import { index as contactsIndex, create as contactsCreate } from '@/routes/contacts';
-import { index as groupsIndex, create as groupsCreate } from '@/routes/groups';
+import { index as groupsIndex } from '@/routes/groups';
 import { cluster as groupsCluster } from '@/routes/groups';
 import {
     inbox as messagesInbox,
@@ -39,6 +41,7 @@ import {
     send as messagesSend,
     sent as messagesSent,
 } from '@/routes/messages';
+import { index as regionsIndex } from '@/routes/regions';
 import { index as summaryIndex } from '@/routes/summary';
 import { index as usersIndex } from '@/routes/users';
 import type { NavItem, NavSection } from '@/types';
@@ -65,18 +68,6 @@ const mainNavSections: NavSection[] = [
                 title: 'Complaints',
                 href: casesIndex(),
                 icon: ClipboardList,
-                children: [
-                    {
-                        title: 'File Complaint',
-                        href: casesCreate(),
-                        icon: UserPlus,
-                    },
-                    {
-                        title: 'Complaint List',
-                        href: casesIndex(),
-                        icon: ClipboardList,
-                    },
-                ],
             },
         ],
     },
@@ -160,11 +151,6 @@ const mainNavSections: NavSection[] = [
                 icon: Users,
                 children: [
                     {
-                        title: 'Add New Group',
-                        href: groupsCreate(),
-                        icon: UserPlus,
-                    },
-                    {
                         title: 'Groups List',
                         href: groupsIndex(),
                         icon: UsersRound,
@@ -186,6 +172,11 @@ const mainNavSections: NavSection[] = [
                 href: usersIndex(),
                 icon: UsersRound,
             },
+            {
+                title: 'Regions',
+                href: regionsIndex(),
+                icon: MapPinned,
+            },
         ],
     },
 ];
@@ -204,13 +195,25 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { isMobile, setOpenMobile } = useSidebar();
+
+    function closeMobileNavigation() {
+        if (isMobile) {
+            setOpenMobile(false);
+        }
+    }
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link
+                                href={dashboard()}
+                                onClick={closeMobileNavigation}
+                                prefetch
+                            >
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

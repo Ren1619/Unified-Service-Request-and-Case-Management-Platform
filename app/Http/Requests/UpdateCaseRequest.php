@@ -27,7 +27,7 @@ class UpdateCaseRequest extends FormRequest
             'region_id' => ['required', 'integer', Rule::exists('regions', 'id')],
             'priority' => ['required', Rule::enum(CasePriority::class)],
             'status' => ['required', Rule::enum(CaseStatus::class)],
-            'channel' => ['required', Rule::enum(CaseChannel::class)],
+            'channel' => ['required', Rule::enum(CaseChannel::class)->only(CaseChannel::intakeSources())],
             'submitted_by' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'assigned_to' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'resolution_notes' => [

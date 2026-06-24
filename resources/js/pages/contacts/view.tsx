@@ -73,6 +73,16 @@ export default function ContactsView({
                         </dt>
                         <dd className="mt-1">{contact.position ?? ''}</dd>
                     </div>
+                    <div>
+                        <dt className="text-sm text-muted-foreground">
+                            Region
+                        </dt>
+                        <dd className="mt-1">
+                            {contact.region
+                                ? `${contact.region.code} - ${contact.region.name}`
+                                : 'No region assigned'}
+                        </dd>
+                    </div>
                     <div className="md:col-span-2">
                         <dt className="text-sm text-muted-foreground">
                             Groups
@@ -97,7 +107,7 @@ export default function ContactsView({
     );
 }
 
-ContactsView.layout = ({ props }: { props: { contact: Contact } }) => ({
+ContactsView.layout = (props: { contact: Contact }) => ({
     breadcrumbs: [
         { title: 'Contacts', href: index() },
         { title: props.contact.name, href: show(props.contact.id) },

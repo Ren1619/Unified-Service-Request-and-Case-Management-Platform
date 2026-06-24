@@ -62,7 +62,7 @@ export default function RegionsView({ region, can }: RegionsViewProps) {
     );
 }
 
-RegionsView.layout = ({ props }: { props: { region: Region } }) => ({
+RegionsView.layout = (props: { region: Region }) => ({
     breadcrumbs: [
         {
             title: 'Regions',

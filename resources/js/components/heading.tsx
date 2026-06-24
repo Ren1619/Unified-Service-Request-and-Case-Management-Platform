@@ -10,20 +10,22 @@ export default function Heading({
     return (
         <header
             className={
-                variant === 'small' ? 'space-y-1' : 'max-w-3xl space-y-1'
+                variant === 'small'
+                    ? 'min-w-0 space-y-1'
+                    : 'min-w-0 max-w-3xl space-y-1'
             }
         >
             <h1
                 className={
                     variant === 'small'
-                        ? 'text-base font-medium'
-                        : 'text-2xl font-semibold tracking-tight'
+                        ? 'break-words text-base font-medium'
+                        : 'break-words text-xl font-semibold tracking-tight min-[360px]:text-2xl'
                 }
             >
                 {title}
             </h1>
             {description && (
-                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                <p className="max-w-2xl break-words text-sm leading-6 text-muted-foreground">
                     {description}
                 </p>
             )}

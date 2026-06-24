@@ -25,11 +25,7 @@ export default function ComplaintTypesEdit({
     );
 }
 
-ComplaintTypesEdit.layout = ({
-    props,
-}: {
-    props: { complaintType: ComplaintType };
-}) => ({
+ComplaintTypesEdit.layout = (props: { complaintType: ComplaintType }) => ({
     breadcrumbs: [
         {
             title: 'Complaint types',

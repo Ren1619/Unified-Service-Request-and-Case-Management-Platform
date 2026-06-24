@@ -7,20 +7,27 @@ import { Label } from '@/components/ui/label';
 import type { CaseFormOptions, ServiceCase } from '@/types';
 
 type CaseFormProps = {
-    caseRecord?: ServiceCase;
+    caseRecord?: ServiceCase | null;
     options: CaseFormOptions;
 };
 
-export default function CaseForm({ caseRecord, options }: CaseFormProps) {
-    const action = caseRecord
+export default function CaseForm({
+    caseRecord = null,
+    options,
+}: CaseFormProps) {
+    const isEditing = caseRecord !== null;
+    const action = isEditing
         ? CaseController.update.form(caseRecord.id)
         : CaseController.store.form();
 
     return (
-        <Form {...action} className="max-w-5xl space-y-6">
+        <Form
+            {...action}
+            className="mx-auto w-full max-w-5xl space-y-4 sm:space-y-6"
+        >
             {({ errors, processing }) => (
                 <>
-                    <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="title">Title</Label>
                             <Input
@@ -41,7 +48,7 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                                 name="complaint_type_id"
                                 defaultValue={caseRecord?.complaint_type_id}
                                 required
-                                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             >
                                 <option value="">Select complaint type</option>
                                 {options.complaintTypes.map((complaintType) => (
@@ -65,12 +72,12 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                             defaultValue={caseRecord?.description ?? ''}
                             rows={5}
                             required
-                            className="min-h-32 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-32"
                         />
                         <InputError message={errors.description} />
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
                         <div className="grid gap-2">
                             <Label htmlFor="region_id">Region</Label>
                             <select
@@ -78,7 +85,7 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                                 name="region_id"
                                 defaultValue={caseRecord?.region_id}
                                 required
-                                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             >
                                 <option value="">Select region</option>
                                 {options.regions.map((region) => (
@@ -97,7 +104,7 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                                 name="priority"
                                 defaultValue={caseRecord?.priority ?? 'medium'}
                                 required
-                                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             >
                                 {options.priorities.map((priority) => (
                                     <option
@@ -112,15 +119,13 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="channel">Channel</Label>
+                            <Label htmlFor="channel">Source</Label>
                             <select
                                 id="channel"
                                 name="channel"
-                                defaultValue={
-                                    caseRecord?.channel ?? 'self_service'
-                                }
+                                defaultValue={caseRecord?.channel ?? 'message'}
                                 required
-                                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             >
                                 {options.channels.map((channel) => (
                                     <option
@@ -134,7 +139,7 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                             <InputError message={errors.channel} />
                         </div>
 
-                        {caseRecord && (
+                        {isEditing && (
                             <div className="grid gap-2">
                                 <Label htmlFor="status">Status</Label>
                                 <select
@@ -142,7 +147,7 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                                     name="status"
                                     defaultValue={caseRecord.status}
                                     required
-                                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                    className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                 >
                                     {options.statuses.map((status) => (
                                         <option
@@ -158,16 +163,18 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                         )}
                     </div>
 
-                    <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
                         <div className="grid gap-2">
-                            <Label htmlFor="submitted_by">Submitted by</Label>
+                            <Label htmlFor="submitted_by">
+                                Linked citizen account
+                            </Label>
                             <select
                                 id="submitted_by"
                                 name="submitted_by"
                                 defaultValue={caseRecord?.submitted_by ?? ''}
-                                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             >
-                                <option value="">Current user</option>
+                                <option value="">No linked account</option>
                                 {options.submitters.map((user) => (
                                     <option key={user.id} value={user.id}>
                                         {user.name} - {user.email}
@@ -183,7 +190,7 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                                 id="assigned_to"
                                 name="assigned_to"
                                 defaultValue={caseRecord?.assigned_to ?? ''}
-                                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             >
                                 <option value="">Unassigned</option>
                                 {options.assignees.map((user) => (
@@ -196,7 +203,7 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                         </div>
                     </div>
 
-                    {caseRecord && (
+                    {isEditing && (
                         <div className="grid gap-2">
                             <Label htmlFor="resolution_notes">
                                 Resolution notes
@@ -204,18 +211,16 @@ export default function CaseForm({ caseRecord, options }: CaseFormProps) {
                             <textarea
                                 id="resolution_notes"
                                 name="resolution_notes"
-                                defaultValue={
-                                    caseRecord.resolution_notes ?? ''
-                                }
+                                defaultValue={caseRecord.resolution_notes ?? ''}
                                 rows={4}
-                                className="min-h-28 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                className="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:min-h-28"
                             />
                             <InputError message={errors.resolution_notes} />
                         </div>
                     )}
 
-                    <Button disabled={processing}>
-                        {caseRecord ? 'Save changes' : 'Create case'}
+                    <Button disabled={processing} className="w-full sm:w-auto">
+                        {isEditing ? 'Save changes' : 'Create case'}
                     </Button>
                 </>
             )}

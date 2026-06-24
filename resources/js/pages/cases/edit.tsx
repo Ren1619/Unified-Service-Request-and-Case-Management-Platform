@@ -27,7 +27,7 @@ export default function CasesEdit({
     );
 }
 
-CasesEdit.layout = ({ props }: { props: { caseRecord: ServiceCase } }) => ({
+CasesEdit.layout = (props: { caseRecord: ServiceCase }) => ({
     breadcrumbs: [
         {
             title: 'Complaints',

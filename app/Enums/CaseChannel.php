@@ -4,14 +4,25 @@ namespace App\Enums;
 
 enum CaseChannel: string
 {
-    case SelfService = 'self_service';
-    case AgentAssisted = 'agent_assisted';
+    case Message = 'message';
+    case Call = 'call';
 
     public function label(): string
     {
         return match ($this) {
-            self::SelfService => 'Self-Service',
-            self::AgentAssisted => 'Agent-Assisted',
+            self::Message => 'Message',
+            self::Call => 'Call',
         };
+    }
+
+    /**
+     * @return array<int, self>
+     */
+    public static function intakeSources(): array
+    {
+        return [
+            self::Message,
+            self::Call,
+        ];
     }
 }

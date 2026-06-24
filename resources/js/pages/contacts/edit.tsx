@@ -1,15 +1,21 @@
 import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import { edit, index, show } from '@/routes/contacts';
-import type { Contact, ContactGroupSummary } from '@/types';
+import type {
+    Contact,
+    ContactGroupSummary,
+    ContactRegionSummary,
+} from '@/types';
 import ContactForm from './contact-form';
 
 export default function ContactsEdit({
     contact,
     groups,
+    regions,
 }: {
     contact: Contact;
     groups: ContactGroupSummary[];
+    regions: ContactRegionSummary[];
 }) {
     return (
         <>
@@ -21,13 +27,17 @@ export default function ContactsEdit({
                     description="Update contact information and group membership."
                 />
 
-                <ContactForm contact={contact} groups={groups} />
+                <ContactForm
+                    contact={contact}
+                    groups={groups}
+                    regions={regions}
+                />
             </div>
         </>
     );
 }
 
-ContactsEdit.layout = ({ props }: { props: { contact: Contact } }) => ({
+ContactsEdit.layout = (props: { contact: Contact }) => ({
     breadcrumbs: [
         { title: 'Contacts', href: index() },
         { title: props.contact.name, href: show(props.contact.id) },

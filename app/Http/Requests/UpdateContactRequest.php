@@ -24,6 +24,7 @@ class UpdateContactRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'organization' => ['nullable', 'string', 'max:255'],
             'position' => ['nullable', 'string', 'max:255'],
+            'region_id' => ['nullable', 'integer', Rule::exists('regions', 'id')],
             'notes' => ['nullable', 'string', 'max:2000'],
             'is_active' => ['sometimes', 'boolean'],
             'group_ids' => ['nullable', 'array'],

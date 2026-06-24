@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\CaseChannel;
 use App\Enums\CasePriority;
 use App\Enums\CaseStatus;
-use App\Enums\UserRole;
 use App\Models\Region;
 use App\Models\ServiceCase;
 use App\Models\SlaConfiguration;
@@ -38,11 +37,7 @@ class CaseService
             $region = Region::query()->findOrFail($attributes['region_id']);
             $priority = CasePriority::from((string) $attributes['priority']);
             $channel = CaseChannel::from((string) $attributes['channel']);
-            $assignedTo = $this->isInternalUser($actor) ? ($attributes['assigned_to'] ?? null) : null;
-
-            if (! $this->isInternalUser($actor)) {
-                $channel = CaseChannel::SelfService;
-            }
+            $assignedTo = $attributes['assigned_to'] ?? null;
 
             $case = $this->cases->create([
                 'case_number' => $this->generateCaseNumber($region),
@@ -53,9 +48,9 @@ class CaseService
                 'priority' => $priority,
                 'status' => $assignedTo ? CaseStatus::Assigned : CaseStatus::New,
                 'region_id' => $region->id,
-                'submitted_by' => $this->submittedBy($attributes, $actor),
+                'submitted_by' => $this->submittedBy($attributes),
                 'assigned_to' => $assignedTo,
-                'created_by_agent' => $channel === CaseChannel::AgentAssisted ? $actor->id : null,
+                'created_by_agent' => $actor->id,
                 'escalation_level' => 0,
                 'due_date' => Date::now()->addDays($this->slaDays($priority)),
                 'closed_at' => null,
@@ -122,6 +117,41 @@ class CaseService
         });
     }
 
+    public function updateStatus(ServiceCase $case, CaseStatus $nextStatus, User $actor): ServiceCase
+    {
+        return DB::transaction(function () use ($case, $nextStatus, $actor): ServiceCase {
+            if (! $case->status->canTransitionTo($nextStatus)) {
+                throw ValidationException::withMessages([
+                    'status' => __('The selected status cannot follow the current case status.'),
+                ]);
+            }
+
+            if (
+                in_array($nextStatus, [CaseStatus::Resolved, CaseStatus::Closed], true)
+                && blank($case->resolution_notes)
+            ) {
+                throw ValidationException::withMessages([
+                    'status' => __('Add resolution notes before marking this complaint as resolved or closed.'),
+                ]);
+            }
+
+            $oldValues = $this->timelineValues($case);
+
+            $updated = $this->cases->update($case, [
+                'status' => $nextStatus,
+                'closed_at' => $nextStatus === CaseStatus::Closed ? ($case->closed_at ?? Date::now()) : $case->closed_at,
+            ]);
+
+            $newValues = $this->timelineValues($updated);
+
+            if ($oldValues['status'] !== $newValues['status']) {
+                $this->recordTimeline($updated, 'status_updated', 'Case status updated.', ['status' => $oldValues['status']], ['status' => $newValues['status']], $actor);
+            }
+
+            return $updated;
+        });
+    }
+
     private function generateCaseNumber(Region $region): string
     {
         $year = Date::now()->format('Y');
@@ -144,25 +174,9 @@ class CaseService
     /**
      * @param  array<string, mixed>  $attributes
      */
-    private function submittedBy(array $attributes, User $actor): ?int
+    private function submittedBy(array $attributes): ?int
     {
-        if (! $this->isInternalUser($actor)) {
-            return $actor->id;
-        }
-
-        return $attributes['submitted_by'] ?? $actor->id;
-    }
-
-    private function isInternalUser(User $user): bool
-    {
-        return $user->hasAnyRole([
-            UserRole::SuperAdmin,
-            UserRole::CentralAdministrator,
-            UserRole::RegionalAdministrator,
-            UserRole::Supervisor,
-            UserRole::CustomerServiceAgent,
-            UserRole::CaseOfficer,
-        ]);
+        return $attributes['submitted_by'] ?? null;
     }
 
     /**

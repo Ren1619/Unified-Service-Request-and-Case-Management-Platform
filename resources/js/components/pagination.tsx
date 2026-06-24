@@ -21,13 +21,14 @@ export default function Pagination({ links }: { links: PaginationLink[] }) {
     }
 
     return (
-        <nav className="flex flex-wrap items-center gap-2">
+        <nav className="flex max-w-full flex-wrap items-center gap-1.5 overflow-x-auto overscroll-x-contain min-[360px]:gap-2">
             {links.map((link, index) => (
                 <Button
                     key={`${link.label}-${index}`}
                     asChild={Boolean(link.url)}
                     variant={link.active ? 'default' : 'outline'}
                     size="sm"
+                    className="shrink-0"
                     disabled={!link.url}
                     aria-current={link.active ? 'page' : undefined}
                     aria-label={link.label

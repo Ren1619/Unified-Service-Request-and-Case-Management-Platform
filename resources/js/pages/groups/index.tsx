@@ -1,11 +1,22 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Network, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import {
+    Eye,
+    MoreHorizontal,
+    Network,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
 import {
     EmptyState,
-    FilterBar,
+    MobileCardList,
+    MobileRecordCard,
+    MobileRecordDetail,
+    ResponsiveFilterBar,
     TableSurface,
 } from '@/components/module-surface';
 import NativeSelect from '@/components/native-select';
@@ -13,10 +24,26 @@ import { PageHeader, PageShell } from '@/components/page-shell';
 import Pagination from '@/components/pagination';
 import StatusBadge from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { create, destroy, edit, index, show } from '@/routes/groups';
+import { destroy, edit, index, show } from '@/routes/groups';
 import { cluster } from '@/routes/groups';
-import type { ContactGroup, Paginated } from '@/types';
+import type { Contact, ContactGroup, Paginated } from '@/types';
+import GroupForm from './group-form';
 
 type GroupsIndexProps = {
     groups: Paginated<ContactGroup>;
@@ -27,15 +54,19 @@ type GroupsIndexProps = {
     can: {
         create: boolean;
     };
+    contacts: Contact[];
 };
 
 export default function GroupsIndex({
     groups,
     filters,
     can,
+    contacts,
 }: GroupsIndexProps) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
+    const [openGroupId, setOpenGroupId] = useState<number | null>(null);
+    const filterFormId = 'groups-filters';
 
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -55,6 +86,51 @@ export default function GroupsIndex({
         router.delete(destroy(group.id).url, { preserveScroll: true });
     }
 
+    function resetFilters() {
+        setSearch('');
+        setStatus('');
+        router.get(index().url, {}, { preserveState: true, replace: true });
+    }
+
+    function GroupActions({ group }: { group: ContactGroup }) {
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Open actions for ${group.name}`}
+                    >
+                        <MoreHorizontal aria-hidden className="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem asChild>
+                        <Link href={show(group.id)}>
+                            <Eye aria-hidden className="size-4" />
+                            View
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href={edit(group.id)}>
+                            <Pencil aria-hidden className="size-4" />
+                            Edit
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        variant="destructive"
+                        onSelect={() => archive(group)}
+                    >
+                        <Trash2 aria-hidden className="size-4" />
+                        Archive
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    }
+
     return (
         <>
             <Head title="Groups" />
@@ -70,12 +146,33 @@ export default function GroupsIndex({
                                 </Link>
                             </Button>
                             {can.create && (
-                                <Button asChild>
-                                    <Link href={create()}>
-                                        <Plus aria-hidden className="size-4" />
-                                        Add New Group
-                                    </Link>
-                                </Button>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <Plus
+                                                aria-hidden
+                                                className="size-4"
+                                            />
+                                            Add New Group
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-5xl">
+                                        <DialogHeader>
+                                            <DialogTitle>
+                                                Add New Group
+                                            </DialogTitle>
+                                            <DialogDescription>
+                                                Create a contact group for
+                                                messaging and coordination.
+                                            </DialogDescription>
+                                        </DialogHeader>
+
+                                        <GroupForm
+                                            contacts={contacts}
+                                            redirectTo="index"
+                                        />
+                                    </DialogContent>
+                                </Dialog>
                             )}
                         </>
                     }
@@ -86,8 +183,13 @@ export default function GroupsIndex({
                     />
                 </PageHeader>
 
-                <FilterBar>
+                <ResponsiveFilterBar
+                    formId={filterFormId}
+                    onReset={resetFilters}
+                    title="Filter groups"
+                >
                     <form
+                        id={filterFormId}
                         onSubmit={submit}
                         className="flex flex-col gap-3 md:flex-row md:items-center"
                     >
@@ -116,14 +218,18 @@ export default function GroupsIndex({
                             <option value="inactive">Inactive</option>
                         </NativeSelect>
 
-                        <Button type="submit" variant="outline">
+                        <Button
+                            type="submit"
+                            variant="outline"
+                            className="hidden md:inline-flex"
+                        >
                             <Search aria-hidden className="size-4" />
                             Search
                         </Button>
                     </form>
-                </FilterBar>
+                </ResponsiveFilterBar>
 
-                <TableSurface>
+                <TableSurface className="hidden md:block">
                     <table className="w-full min-w-[720px] text-sm">
                         <thead className="bg-muted/60 text-left text-xs text-muted-foreground uppercase">
                             <tr>
@@ -210,10 +316,7 @@ export default function GroupsIndex({
                             ))}
                             {groups.data.length === 0 && (
                                 <tr>
-                                    <td
-                                        colSpan={5}
-                                        className="px-4 py-4"
-                                    >
+                                    <td colSpan={5} className="px-4 py-4">
                                         <EmptyState
                                             icon={Network}
                                             title="No groups found"
@@ -225,6 +328,39 @@ export default function GroupsIndex({
                         </tbody>
                     </table>
                 </TableSurface>
+
+                <MobileCardList>
+                    {groups.data.map((group) => (
+                        <MobileRecordCard
+                            key={group.id}
+                            actions={<GroupActions group={group} />}
+                            badges={<StatusBadge active={group.is_active} />}
+                            description={group.description ?? 'No description'}
+                            isOpen={openGroupId === group.id}
+                            onOpenChange={(open) =>
+                                setOpenGroupId(open ? group.id : null)
+                            }
+                            title={group.name}
+                        >
+                            <MobileRecordDetail label="Contacts">
+                                {group.contacts_count ?? 0}
+                            </MobileRecordDetail>
+                            <MobileRecordDetail label="Description">
+                                {group.description ?? 'No description'}
+                            </MobileRecordDetail>
+                            <MobileRecordDetail label="Status">
+                                <StatusBadge active={group.is_active} />
+                            </MobileRecordDetail>
+                        </MobileRecordCard>
+                    ))}
+                    {groups.data.length === 0 && (
+                        <EmptyState
+                            icon={Network}
+                            title="No groups found"
+                            description="Create groups to coordinate SMS recipients by team, office, or response cluster."
+                        />
+                    )}
+                </MobileCardList>
 
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <p className="text-sm text-muted-foreground">

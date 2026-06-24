@@ -106,7 +106,7 @@ export default function GroupsView({
     );
 }
 
-GroupsView.layout = ({ props }: { props: { group: ContactGroup } }) => ({
+GroupsView.layout = (props: { group: ContactGroup }) => ({
     breadcrumbs: [
         { title: 'Groups', href: index() },
         { title: props.group.name, href: show(props.group.id) },

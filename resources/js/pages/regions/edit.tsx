@@ -21,7 +21,7 @@ export default function RegionsEdit({ region }: { region: Region }) {
     );
 }
 
-RegionsEdit.layout = ({ props }: { props: { region: Region } }) => ({
+RegionsEdit.layout = (props: { region: Region }) => ({
     breadcrumbs: [
         {
             title: 'Regions',
